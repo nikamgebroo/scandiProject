@@ -1,7 +1,7 @@
 <?php
 $pdo = new PDO('mysql:host=localhost;port=3306;dbname=scandiwebsql', 'root', '');
 $pdo ->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-$statement = $pdo->prepare('SELECT * FROM products');
+$statement = $pdo->prepare('SELECT * FROM products ORDER BY create_date DESC' );
 $statement->execute();
 $products =$statement->fetchALL(PDO::FETCH_ASSOC);
 
@@ -33,6 +33,7 @@ $products =$statement->fetchALL(PDO::FETCH_ASSOC);
         <th scope="col">Image</th>
         <th scope="col">Title</th>
         <th scope="col">Price</th>
+        <th scope="col">description</th>
         <th scope="col">Create date</th>
         <th scope="col">Actions</th>
     </tr>
@@ -41,13 +42,21 @@ $products =$statement->fetchALL(PDO::FETCH_ASSOC);
     <?php foreach ($products as $i=> $product) { ?>
         <tr>
             <th scope="row"><?php echo $i++?> </th>
-            <td></td>
+            <td>
+           <?php if($product['image']): ?>
+        <img src = <?php echo $product['image']?> alt="<?php echo $product['titlle']?>" class="product-img">
+        <?php endif; ?>
+            </td>
             <td><?php echo $product['titlle'] ?></td>
             <td><?php echo $product['price'] ?></td>
+            <td><?php echo $product['description'] ?></td>
             <td><?php echo $product['create_date'] ?></td>
             <td>
-                <button type="button" class="btn btn-sn btn-outline-primary">Edit</button>
-                <button type="button" class="btn btn-sn btn-outline-danger">Delete</button>
+                <a href="update.php?id=<?php echo $product['id']?>"  class="btn btn-sn btn-outline-primary">Edit</a>
+               <form method="post" action="delete.php" style="display:inline-block">
+                   <input type="hidden" name="id" value="<?php echo $product['id']?>">
+                <button type="submit" class="btn btn-sn btn-outline-danger">Delete</button>
+               </form>
             </td>
         </tr>
     <?php } ?>
