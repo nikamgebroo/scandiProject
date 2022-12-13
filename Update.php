@@ -1,4 +1,7 @@
 <?php
+
+require_once "functions.php";
+
 $id = $_GET['id']?? null;
 if(!$id){
     header('Location: index.php');
@@ -11,20 +14,30 @@ $statement = $pdo->prepare('SELECT * FROM products WHERE id = :id' );
 $statement->bindValue(':id', $id);
 $statement->execute();
 $product =$statement->fetch(PDO::FETCH_ASSOC);
-
+$errors = [];
 $title = $product['titlle'];
 $description = $product['description'];
 $price = $product['price'];
+
+
 if($_SERVER['REQUEST_METHOD'] ==='POST'){
-    var_dump($_POST);
+
     $title =$_POST['titlle'];
     $description =$_POST['description'];
     $price =$_POST['price'];
-
     $image=$_FILES['image'] ?? null;
     $imagepath =  '';
     if(!is_dir('images')){
         mkdir('images');
+    }
+
+    if($image){
+        if($product['image']){
+            unlink($product['image']);
+        }
+        $imagepath =  'images/' .randomString(8).'/'.$image['name'];
+        mkdir(dirname($imagepath));
+        move_uploaded_file($image['tmp_name'], $imagepath);
     }
 
     if(!$title ){
@@ -34,13 +47,13 @@ if($_SERVER['REQUEST_METHOD'] ==='POST'){
         $errors[]='product price is required';
     }
     if(empty(($errors))){
-        $statement = $pdo->prepare("INSERT INTO products(titlle,image, description , price,create_date)
-                    VALUES(:title, :image, :description, :price, :date)");
+        $statement = $pdo->prepare("UPDATE products SET title = :titlle,image= :image, 
+                    description= :description, price= :price WHERE id = :id");
         $statement->bindValue(':title', $title);
         $statement->bindValue(':image', $imagepath);
         $statement->bindValue(':description', $description);
         $statement->bindValue(':price', $price);
-        $statement->bindValue(':date', date('Y-m-d H:i:s'));
+        $statement->bindValue(':id', $id);
         $statement->execute();
         header('location: index.php');
     }
@@ -61,6 +74,10 @@ if($_SERVER['REQUEST_METHOD'] ==='POST'){
     <link rel="stylesheet" href="app.css">
 </head>
 <body>
+<p>
+<a href="index.php">Back to main</a>
+</p>
+
 <h1> Update product <b><?php echo $product['titlle']?></b></h1>
 <?php if(!empty($errors)): ?>
 <div class="alert alert-danger">
@@ -69,7 +86,11 @@ if($_SERVER['REQUEST_METHOD'] ==='POST'){
     <?php endforeach; ?>
     <?php endif; ?>
 </div>
+
 <form method="post" enctype="multipart/form-data" >
+   <?php if($product['image']): ?>
+   <img src="<?php echo $product['image']?>" class="product-img-view" >
+    <?php endif; ?>
     <div class="form-group">
         <label>Product Image</label><br>
         <input type="file" name="image">
@@ -80,11 +101,11 @@ if($_SERVER['REQUEST_METHOD'] ==='POST'){
     </div>
     <div class="form-group">
         <label>Product description</label>
-        <textarea class="form-control" name="description" <?php echo $description ?>></textarea>
+        <textarea class="form-control" name="description"><?php echo $description ?></textarea>
     </div>
     <div class="form-group">
         <label>Product price</label>
-        <input type="number" step=".01" name="price" class="form-control" <?php echo $price ?> >
+        <input type="number" step=".01" name="price" class="form-control" value="<?php echo $price ?>" >
     </div>
     <button type="submit" class="btn btn-primary">Submit</button>
 </form>
